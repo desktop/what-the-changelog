@@ -1,6 +1,9 @@
 import { spawn } from "./spawn";
 import { fetchPR, IAPIPR } from "./api";
 
+const PlaceholderChangeType = "???";
+const OfficialOwner = "desktop";
+
 async function getLogLines(
   previousVersion: string
 ): Promise<ReadonlyArray<string>> {
@@ -18,8 +21,8 @@ async function getLogLines(
 }
 
 interface IParsedCommit {
-  readonly id: number;
-  readonly remote: string;
+  readonly prID: number;
+  readonly owner: string;
 }
 
 function parseCommitTitle(line: string): IParsedCommit {
@@ -36,8 +39,8 @@ function parseCommitTitle(line: string): IParsedCommit {
   }
 
   return {
-    id,
-    remote: matches[2]
+    prID: id,
+    owner: matches[2]
   };
 }
 
@@ -45,9 +48,7 @@ function capitalized(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const PlaceholderChangeType = "???";
-
-function getChangelogEntry(prID: number, pr: IAPIPR): string {
+function getChangelogEntry(commit: IParsedCommit, pr: IAPIPR): string {
   let issueRef = "";
   let type = PlaceholderChangeType;
   const description = capitalized(pr.title);
@@ -64,10 +65,15 @@ function getChangelogEntry(prID: number, pr: IAPIPR): string {
   if (issueRef.length) {
     type = "Fixed";
   } else {
-    issueRef = ` #${prID}`;
+    issueRef = ` #${commit.prID}`;
   }
 
-  return `[${type}] ${description} -${issueRef}`;
+  let attribution = "";
+  if (commit.owner !== OfficialOwner) {
+    attribution = `. Thanks @${commit.owner}!`;
+  }
+
+  return `[${type}] ${description} -${issueRef}${attribution}`;
 }
 
 async function getChangelogEntries(
@@ -77,12 +83,12 @@ async function getChangelogEntries(
   for (const line of lines) {
     try {
       const commit = parseCommitTitle(line);
-      const pr = await fetchPR(commit.id);
+      const pr = await fetchPR(commit.prID);
       if (!pr) {
-        throw new Error(`Unable to get PR from API: ${commit.id}`);
+        throw new Error(`Unable to get PR from API: ${commit.prID}`);
       }
 
-      const entry = getChangelogEntry(commit.id, pr);
+      const entry = getChangelogEntry(commit, pr);
       entries.push(entry);
     } catch (e) {
       console.warn("Unable to parse line, using the full message.", e);
