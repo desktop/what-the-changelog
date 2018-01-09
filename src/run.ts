@@ -1,6 +1,8 @@
 import { spawn } from "./spawn";
 import { fetchPR, IAPIPR } from "./api";
 
+const jsonStringify: (obj: any) => string = require('json-pretty');
+
 const PlaceholderChangeType = "???";
 const OfficialOwner = "desktop";
 
@@ -104,5 +106,5 @@ export async function run(args: ReadonlyArray<string>): Promise<void> {
   const previousVersion = args[0];
   const lines = await getLogLines(previousVersion);
   const changelogEntries = await getChangelogEntries(lines);
-  console.log(JSON.stringify(changelogEntries));
+  console.log(jsonStringify(changelogEntries));
 }
