@@ -5,5 +5,9 @@ if (!process.env.GITHUB_ACCESS_TOKEN) {
     process.exit(1)
 }
 
+process.on('unhandledRejection', error => {
+  console.error(error.message);
+});
+
 const args = process.argv.splice(2);
 run(args);
