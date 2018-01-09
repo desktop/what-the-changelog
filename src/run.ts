@@ -103,7 +103,25 @@ async function getChangelogEntries(
 }
 
 export async function run(args: ReadonlyArray<string>): Promise<void> {
+  try {
+    await spawn("git", ["--version"])
+  } catch {
+    throw new Error("Unable to find Git on your PATH, aborting...")
+  }
+
+  try {
+    await spawn("git", ["rev-parse","--show-cdup"])
+  } catch {
+    throw new Error(`The current directory '${process.cwd()}' is not a Git repository, aborting...`)
+  }
+
   const previousVersion = args[0];
+  try {
+    await spawn("git", ["rev-parse", previousVersion])
+  } catch {
+    throw new Error(`Unable to find ref '${previousVersion}' in your repository, aborting...`)
+  }
+
   const lines = await getLogLines(previousVersion);
   const changelogEntries = await getChangelogEntries(lines);
   console.log(jsonStringify(changelogEntries));
