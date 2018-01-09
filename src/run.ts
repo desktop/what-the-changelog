@@ -11,7 +11,7 @@ async function getLogLines(
     "log",
     `...${previousVersion}`,
     "--merges",
-    "--grep='Merge pull request'",
+    '--grep="Merge pull request"',
     "--format=format:%s",
     "-z",
     "--"
